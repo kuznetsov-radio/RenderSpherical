@@ -10,7 +10,7 @@ function RenderSphericalMulti, NLOS, lon_arr, lat_arr, r_arr, $
 ;and varies from -90 to 90 degrees; the radial distance is >0.
 ;
 ;Input parameters:
-; NLOS - number of the lines of sight
+; NLOS - number of the lines of sight, long
 ; lon_arr - 1D array of longitude grid points, in degrees, double;
 ; lat_arr - 1D array of latitude grid points, in degrees, double;
 ; r_arr - 1D array of radial distance grid points, in R_Sun units, double;
