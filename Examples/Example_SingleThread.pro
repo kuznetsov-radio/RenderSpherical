@@ -3,6 +3,14 @@ pro Example_SingleThread
  restore, 'PFSSmodel1.sav' ; => grid points (lon, lat, r) +
                            ; magnetic field components (Bph, Bth, Br) at the nodes
  
+ ;Convert the values to double format
+ lon=double(lon)
+ lat=double(lat)
+ r=double(r)
+ Bph=double(Bph)
+ Bth=double(Bth)
+ Br=double(Br)
+ 
  ;Rotate the model by 50 degrees
  lon+=50
 
@@ -13,6 +21,35 @@ pro Example_SingleThread
  
  ;Draw the boundaries of the model volume
  PlotSphericalBox, G, min(r), max(r), min(lon), max(lon), min(lat), max(lat), 'black'
+ 
+ ;---------------------------------------------------------------------------------
+ forward_function LineTrace, LineTraceShort
+ 
+ for i=0, 2 do for j=0, 2 do begin
+  ;initial coordinates of the field line
+  lon0=min(lon)+(max(lon)-min(lon))*(0.5+i)/3
+  lat0=min(lat)+(max(lat)-min(lat))*(0.5+j)/3
+  r0=1.1d0
+  
+  ;Call the code computing the field line
+  ;(with the integration step ds=1d-3)
+  N=LineTrace(lon, lat, r, Bph, Bth, Br, lon0, lat0, r0, 1d-3, $
+              l_lon, l_lat, l_r, lineclosed, l, Bmax, Bavg, B1, B2)
+           
+  ;Draw the field line
+  G=polyline(cos(l_lat*!dpi/180)*sin(l_lon*!dpi/180)*l_r, $
+             sin(l_lat*!dpi/180)*l_r, $
+             cos(l_lat*!dpi/180)*cos(l_lon*!dpi/180)*l_r, $
+             overplot=G, /data, color=lineclosed ? 'green' : 'magenta')     
+             
+  ;Call the code computing the field line parameters only
+  ;(the full version of the line-tracing code computes these parameters, too)
+  ;(with the integration step ds=1d-3)
+  N=LineTraceShort(lon, lat, r, Bph, Bth, Br, lon0, lat0, r0, 1d-3, $
+                   lineclosed, l, Bmax, Bavg, B1, B2)
+  ;Print the line parameters (for the closed lines only)
+  if lineclosed then print, N, l, Bmax, Bavg, B1, B2
+ endfor
  
  ;---------------------------------------------------------------------------------
  ;Endpoints of the line of sight (in Cartesian system):
@@ -30,7 +67,7 @@ pro Example_SingleThread
  a=a/sqrt(a[0]^2+a[1]^2+a[2]^2) ;unit vector along the line of sight
  
  ;Draw the line of sight
- G=polyline([r1[0], r2[0]], [r1[1], r2[1]], [r1[2], r2[2]], /data, overplot=G, thick=2, color='cyan')
+ G=polyline([r1[0], r2[0]], [r1[1], r2[1]], [r1[2], r2[2]], /data, overplot=G, thick=2, color='red')
  
  ;Convert the line-of-sight endpoints to spherical system
  p1=[sqrt(r1[0]^2+r1[1]^2+r1[2]^2), $

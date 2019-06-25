@@ -2,6 +2,14 @@ pro Example_MultiThread
  ;Load the PFSS extrapolation
  restore, 'PFSSmodel1.sav' ; => grid points (lon, lat, r) +
                            ; magnetic field components (Bph, Bth, Br) at the nodes
+                           
+ ;Convert the values to double format
+ lon=double(lon)
+ lat=double(lat)
+ r=double(r)
+ Bph=double(Bph)
+ Bth=double(Bth)
+ Br=double(Br)                           
  
  ;Rotate the model by 50 degrees
  lon+=50
@@ -13,6 +21,44 @@ pro Example_MultiThread
  
  ;Draw the boundaries of the model volume
  PlotSphericalBox, G, min(r), max(r), min(lon), max(lon), min(lat), max(lat), 'black'
+ 
+ ;---------------------------------------------------------------------------------
+ Nlines=9L ;number of field lines
+ 
+ ;Specify the initial coorfinates of the field lines
+ lon0_m=dblarr(Nlines)
+ lat0_m=dblarr(Nlines)
+ r0_m=dblarr(Nlines)
+ k=0
+ for i=0, 2 do for j=0, 2 do begin
+  lon0_m[k]=min(lon)+(max(lon)-min(lon))*(0.5+i)/3
+  lat0_m[k]=min(lat)+(max(lat)-min(lat))*(0.5+j)/3
+  r0_m[k]=1.1d0
+  k+=1
+ endfor
+  
+ forward_function LineTraceMulti, LineTraceShortMulti
+ 
+ ;Call the code computing the field lines
+ ;(with the integration step ds=1d-3)
+ N_m=LineTraceMulti(Nlines, lon, lat, r, Bph, Bth, Br, lon0_m, lat0_m, r0_m, 1d-3, $
+                    l_lon_m, l_lat_m, l_r_m, lineclosed_m, l_m, Bmax_m, Bavg_m, B1_m, B2_m)
+           
+ ;Draw the field lines
+ for k=0, Nlines-1 do $
+  G=polyline(cos(l_lat_m[0 : N_m[k]-1, k]*!dpi/180)*sin(l_lon_m[0 : N_m[k]-1, k]*!dpi/180)*l_r_m[0 : N_m[k]-1, k], $
+             sin(l_lat_m[0 : N_m[k]-1, k]*!dpi/180)*l_r_m[0 : N_m[k]-1, k], $
+             cos(l_lat_m[0 : N_m[k]-1, k]*!dpi/180)*cos(l_lon_m[0 : N_m[k]-1, k]*!dpi/180)*l_r_m[0 : N_m[k]-1, k], $
+             overplot=G, /data, color=lineclosed_m[k] ? 'green' : 'magenta')     
+             
+ ;Call the code computing the field line parameters only
+ ;(the full version of the line-tracing code computes these parameters, too)
+ ;(with the integration step ds=1d-3)
+ N_m=LineTraceShortMulti(Nlines, lon, lat, r, Bph, Bth, Br, lon0_m, lat0_m, r0_m, 1d-3, $
+                         lineclosed_m, l_m, Bmax_m, Bavg_m, B1_m, B2_m)
+ ;Print the line parameters (for the closed lines only)
+ for k=0, Nlines-1 do if lineclosed_m[k] then $
+  print, N_m[k], l_m[k], Bmax_m[k], Bavg_m[k], B1_m[k], B2_m[k]
  
  ;---------------------------------------------------------------------------------
  NLOS=4L ;number of lines of sight
@@ -43,7 +89,7 @@ pro Example_MultiThread
  ;Draw the lines of sight
  for j=0, NLOS-1 do $
   G=polyline([r1_m[0, j], r2_m[0, j]], [r1_m[1, j], r2_m[1, j]], [r1_m[2, j], r2_m[2, j]], $
-             /data, overplot=G, thick=2, color='cyan')
+             /data, overplot=G, thick=2, color='red')
  
  ;Convert the lines-of-sight endpoints to spherical system
  p1_m=dblarr(3, NLOS)
