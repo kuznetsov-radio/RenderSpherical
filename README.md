@@ -1,4 +1,4 @@
-Rendering code for the spherical coordinate system.
+Rendering and magnetic field line-tracing code for the spherical coordinate system.
 
 Alexey Kuznetsov, June 2019.
 
